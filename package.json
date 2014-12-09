@@ -1,0 +1,23 @@
+{
+  "name": "slack-bot",
+  "version": "0.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.10.4",
+    "ical": "^0.3.1",
+    "moment": "^2.8.4",
+    "node-hacker-news": "^0.1.0",
+    "passport": "^0.2.1",
+    "passport-slack": "0.0.1",
+    "q": "^1.1.2",
+    "request-then": "^1.0.0",
+    "slack-node": "0.0.93",
+    "slack-notify": "^0.1.2"
+  }
+}

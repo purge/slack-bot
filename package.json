@@ -9,6 +9,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "co-body": "^1.0.0",
     "ical": "^0.3.1",
     "koa": "^0.14.0",
     "koa-router": "^3.7.0",
@@ -17,9 +18,11 @@
     "node-hacker-news": "^0.1.0",
     "passport": "^0.2.1",
     "q": "^1.1.2",
+    "request": "^2.51.0",
     "request-then": "^1.0.0",
     "rrule": "^2.1.0",
     "slack-node": "0.0.93",
-    "slack-notify": "^0.1.2"
+    "slack-notify": "^0.1.2",
+    "underscore": "^1.7.0"
   }
 }

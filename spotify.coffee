@@ -8,12 +8,13 @@ Slack = require 'slack-node'
 request = require 'request'
 slack = new Slack(secret.slack_webhook_token, "theskiff")
 
+parse = require 'co-body'
 app = koa()
 app.use Router(app)
 
 app.post '/spotify/:type', -->
-  console.log @params
-  console.log @request.query
+  body = yield parse @, limit: '1kb'
+  console.log body
   @body = 'Hello World'
 
-app.listen(3000)
+app.listen(8080)

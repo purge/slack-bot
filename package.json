@@ -23,6 +23,7 @@
     "rrule": "^2.1.0",
     "slack-node": "0.0.93",
     "slack-notify": "^0.1.2",
+    "spotify-node-applescript": "^0.2.1",
     "underscore": "^1.7.0"
   }
 }

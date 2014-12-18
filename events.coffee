@@ -7,6 +7,8 @@ secret = require './secret.json'
 Slack = require 'slack-node'
 request = require 'request-then'
 slack = require('slack-notify')(secret.slack_events_url)
+RRule = require('rrule').RRule
+
 $q = require 'q'
 
 calendars = [
@@ -27,9 +29,23 @@ _.each calendars, (url) ->
 
     ics = ical.parseICS(resp.body)
     _.each ics, (event) ->
+      #console.log event if event.summary == 'DotBrighton'
+      has_recurrance = false
       if event.type == 'VEVENT'
+        if event.rrule
+          opts = _.omit event.rrule.options, ['bynmonthday','bynweekday']
+          rule = new RRule opts
+
+          has_recurrance = rule.between(
+            now.clone().startOf('day').toDate(),
+            now.clone().endOf('day').toDate(),
+          ).length
+          console.log now.clone().startOf('day').toDate(),
+          console.log now.clone().endOf('day').toDate(),
+          console.log has_recurrance
+
         start = moment(event.start)
-        if start.isSame(now, 'day')
+        if has_recurrance or start.isSame(now, 'day')
 
           today.push
             time:start.format("HH:mm")
@@ -48,14 +64,15 @@ defer.done ->
         value: e.summary,
         short: true
       ]
+    console.log asAttachment
 
-    slack.send
-      channel: "#events"
-      username: "eventbot"
-      text: 'Today at The Skiff',
-      attachments: [
-        {
-          fallback: 'Fallback...',
-          fields: asAttachment
-        }
-      ]
+    #slack.send
+      #channel: "#events"
+      #username: "eventbot"
+      #text: 'Today at The Skiff',
+      #attachments: [
+        #{
+          #fallback: 'Fallback...',
+          #fields: asAttachment
+        #}
+      #]

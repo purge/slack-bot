@@ -9,14 +9,19 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "coffee-script-nightly": "^1.7.0-nightly0",
     "express": "^4.10.4",
     "ical": "^0.3.1",
+    "koa": "^0.14.0",
+    "koa-router": "^3.7.0",
     "moment": "^2.8.4",
+    "moment-recur": "^1.0.0",
     "node-hacker-news": "^0.1.0",
     "passport": "^0.2.1",
     "passport-slack": "0.0.1",
     "q": "^1.1.2",
     "request-then": "^1.0.0",
+    "rrule": "^2.1.0",
     "slack-node": "0.0.93",
     "slack-notify": "^0.1.2"
   }

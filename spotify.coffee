@@ -1,6 +1,7 @@
 #!/usr/bin/env coffee --nodejs --harmony
 
 koa = require 'koa'
+async = require 'async'
 _ = require 'underscore'
 parse = require 'co-body'
 Router = require('koa-router')
@@ -16,12 +17,22 @@ played = []
 app = koa()
 app.use Router(app)
 
+say = (text) ->
+  slack.webhook
+    channel: '#skiff_spotify'
+    username: 'spotify'
+    text: text
+  , (err) -> console.log "said #{text}"
+
+say = (text) ->
+  console.log "said #{text}"
+
 add = (link) ->
   if played.indexOf(link) == -1 and queued.indexOf(link) == -1
     console.log "queuing #{link}"
     queued.push(link)
     return true
-  return false
+  false
 
 app.post '/spotify/:type', -->
   body = yield parse @, limit: '1kb'
@@ -30,12 +41,7 @@ app.post '/spotify/:type', -->
   content = body.text.substr(@params.type.length+1)
 
   if matches = content.match(/<(.*)>/)
-    if add(matches[1])
-      slack.webhook
-        channel: '#skiff_spotify'
-        username: 'spotify'
-        text: "Added!"
-      , (err) -> console.log "added via link"
+    say "Added" if add(matches[1])
 
   else
     #free text search
@@ -45,59 +51,71 @@ app.post '/spotify/:type', -->
     , (error, response, body) ->
       if body.tracks.total > 0 and body.tracks.items[0]
         track = body.tracks.items[0]
-        if add(track.uri)
-          slack.webhook
-            channel: '#skiff_spotify'
-            username: 'spotify'
-            text: "Added #{track.name}"
-          , (err) -> console.log "added via search"
+        say("Added #{track.name}") if add(track.uri)
 
   @body = 'Ok'
 
 app.listen(8080)
 
-cur_length = 0
-
-volDown = ->
-  _.times 5, (i) ->
+volDown = (cb, steps=5) ->
+  console.log "setting volume"
+  _.times steps, (i) ->
     _.delay (i) ->
-      console.log "set volume #{100 - (i * 20)}"
       spotify.setVolume 100 - (i * 20)
+      cb(null) if i == ( steps - 1 )
     , i * 200, i
 
-getTrack = ->
-  spotify.getTrack (err, track) ->
-    unless err
-      cur_length = track.duration
-      slack.webhook
-        channel: '#skiff_spotify'
-        username: 'spotify'
-        text: "Now playing: #{track.artist} - #{track.name}"
-      , (err) -> console.log "track name delviered"
+track_length = 0
 
-in_change = false
+getTrack = (cb) ->
+  spotify.getTrack (err, track) ->
+    if err
+      cb?(err)
+    unless err
+      say "Now playing: #{track.artist} - #{track.name}"
+      cb?(null, track.duration)
 
 checkStatus = ->
   spotify.getState (err, state) ->
-    return unless state and queued.length
+    console.log "heartbeat - left #{track_length - state.position}"
 
-    if !in_change and cur_length - state.position < 10
+    if state and queued.length and ((track_length - state.position <= 10 or state.state == 'paused') or track_length == 0)
+      steps = []
+
       link = queued.shift()
-      console.log "going to play #{link} in 5 seconds"
-      in_change = true
-      volDown()
+      console.log "prepping to play #{link}"
 
-      _.delay ->
+      steps.push volDown
+      steps.push (cb) ->
+        console.log "playing track"
         spotify.playTrack link, ->
-          spotify.setVolume 100
-          in_change = false
-          played.push link
-          _.delay getTrack, 100
-          _.delay ->
-            in_change = false
-          , 1000
-      , 800
+          track_length = 0
+          cb()
 
-getTrack()
-setInterval checkStatus, 500
+      steps.push (cb) ->
+        console.log "vol max"
+        spotify.setVolume 100
+        played.push link
+        cb()
+
+      steps.push (cb) ->
+        _.delay ->
+          getTrack (err, duration) ->
+            console.log "new track duration is #{duration}"
+            track_length = duration
+            cb(err)
+        , 1000
+
+      async.series steps, (all) ->
+        console.log "done steps"
+        _.delay checkStatus, 5000
+
+    else
+      _.delay checkStatus, 5000
+
+
+getTrack (err, duration) ->
+  console.log "already playing track #{duration}"
+  track_length = duration
+  checkStatus()
 
